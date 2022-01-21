@@ -36,7 +36,7 @@ paths:
         content:
           application/json;charset=utf-8:
             schema:
-              $ref: "#/components/schemas/BecknCallbackReq_OnUpdateMessage"
+              $ref: '#/components/schemas/BecknReq_OnUpdateMessage'
       responses:
         "200":
           description: Acknowledgement of message received
@@ -84,18 +84,41 @@ paths:
         content:
           application/json;charset=utf-8:
             schema:
-              $ref: "#/components/schemas/BecknReq_ConfirmReqMessage"
+              $ref: '#/components/schemas/BecknReq_ConfirmMessage'
       responses:
-        "200":
+        '200':
           description: Acknowledgement of message received
           content:
             application/json;charset=utf-8:
               schema:
-                $ref: "#/components/schemas/ConfirmResMessage"
-        "400":
+                $ref: '#/components/schemas/AckResponse'
+        '400':
           description: Invalid `body` or `Authorization`
-        "401":
-          $ref: "#/components/responses/Unauthorized"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      security:
+        - Subscriber: []
+  /on_confirm:
+    post:
+      tags:
+        - Beckn App Platform (BAP)
+      description: Send active order object
+      requestBody:
+        content:
+          application/json;charset=utf-8:
+            schema:
+              $ref: '#/components/schemas/BecknCallbackReq_OnConfirmMessage'
+      responses:
+        '200':
+          description: Acknowledgement of message received
+          content:
+            application/json;charset=utf-8:
+              schema:
+                $ref: '#/components/schemas/AckResponse'
+        '400':
+          description: Invalid `body` or `Authorization`
+        '401':
+          $ref: '#/components/responses/Unauthorized'
       security:
         - Subscriber: []
   /cancel:
@@ -144,6 +167,7 @@ paths:
           $ref: "#/components/responses/Unauthorized"
       security:
         - Subscriber: []
+        
 components:
   schemas:
     AckResponse:
@@ -158,43 +182,57 @@ components:
           type: object
           properties:
             context:
-              $ref: "#/components/schemas/Context"
+              $ref: '#/components/schemas/Context'
             message:
-              $ref: "#/components/schemas/OnSearchMessage"
+              $ref: '#/components/schemas/OnSearchMessage'
         - required:
             - context
             - error
           type: object
           properties:
             context:
-              $ref: "#/components/schemas/Context"
+              $ref: '#/components/schemas/Context'
             error:
-              $ref: "#/components/schemas/Error"
+              $ref: '#/components/schemas/Error'
       type: object
     Context:
       required:
         - domain
+        - country
+        - city
+        - action
         - core_version
+        - bap_id
         - bap_uri
         - transaction_id
         - message_id
         - timestamp
       type: object
       properties:
+        ttl:
+          $ref: '#/components/schemas/UTCTime'
+        country:
+          type: string
         domain:
-          $ref: "#/components/schemas/Domain"
+          $ref: '#/components/schemas/Domain'
         bpp_uri:
-          $ref: "#/components/schemas/BaseUrl"
+          $ref: '#/components/schemas/BaseUrl'
         transaction_id:
           type: string
+        action:
+          $ref: '#/components/schemas/Action'
         message_id:
           type: string
+        key:
+          type: string
+        city:
+          type: string
         bap_uri:
-          $ref: "#/components/schemas/BaseUrl"
+          $ref: '#/components/schemas/BaseUrl'
         bpp_id:
           type: string
         timestamp:
-          $ref: "#/components/schemas/UTCTime"
+          $ref: '#/components/schemas/UTCTime'
         core_version:
           type: string
         bap_id:
@@ -209,10 +247,33 @@ components:
         - HEALTHCARE
         - METRO
         - PARKING
+    Action:
+      type: string
+      enum:
+        - SEARCH
+        - SELECT
+        - INIT
+        - CONFIRM
+        - UPDATE
+        - STATUS
+        - TRACK
+        - CANCEL
+        - RATING
+        - SUPPORT
+        - ON_SEARCH
+        - ON_SELECT
+        - ON_INIT
+        - ON_CONFIRM
+        - ON_UPDATE
+        - ON_STATUS
+        - ON_TRACK
+        - ON_CANCEL
+        - ON_RATING
+        - ON_SUPPORT
     BaseUrl:
       type: string
     UTCTime:
-      example: "2016-07-22T00:00:00Z"
+      example: '2016-07-22T00:00:00Z'
       format: yyyy-mm-ddThh:MM:ssZ
       type: string
     Error:
@@ -222,7 +283,7 @@ components:
       type: object
       properties:
         _type:
-          $ref: "#/components/schemas/ErrorType"
+          $ref: '#/components/schemas/ErrorType'
         path:
           type: string
         code:
@@ -245,12 +306,13 @@ components:
       properties:
         catalog:
           required:
-            - bpp_providers
+            - bpp/providers
           type: object
           properties:
-            bpp_providers:
+            bpp/providers:
               items:
                 required:
+                  - id
                   - name
                   - items
                   - contacts
@@ -282,19 +344,21 @@ components:
                       type: object
                       properties:
                         nearest_driver_distance:
-                          $ref: "#/components/schemas/DecimalValue"
+                          $ref: '#/components/schemas/DecimalValue'
                         discount:
-                          $ref: "#/components/schemas/Price"
+                          $ref: '#/components/schemas/Price'
                         estimated_price:
-                          $ref: "#/components/schemas/Price"
+                          $ref: '#/components/schemas/Price'
                         id:
                           type: string
                         vehicle_variant:
                           type: string
                         discounted_price:
-                          $ref: "#/components/schemas/Price"
+                          $ref: '#/components/schemas/Price'
                     type: array
                   name:
+                    type: string
+                  id:
                     type: string
                   contacts:
                     type: string
@@ -305,45 +369,34 @@ components:
       type: object
       properties:
         value:
-          $ref: "#/components/schemas/DecimalValue"
+          $ref: '#/components/schemas/DecimalValue'
     DecimalValue:
       format: '[-]?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?'
       type: string
       description: Decimal value in a string representation with an optional leading "-" for negative numbers. Integer and fractional parts are separated with a dot.Maximum allowed precision (total number of digits) is 30 String format is used to prevent loss of precision.
-    BecknCallbackReq_OnUpdateMessage:
-      oneOf:
-        - required:
-            - context
-            - message
-          type: object
-          properties:
-            context:
-              $ref: "#/components/schemas/Context"
-            message:
-              $ref: "#/components/schemas/OnUpdateMessage"
-        - required:
-            - context
-            - error
-          type: object
-          properties:
-            context:
-              $ref: "#/components/schemas/Context"
-            error:
-              $ref: "#/components/schemas/Error"
+    BecknReq_OnUpdateMessage:
+      required:
+        - context
+        - message
       type: object
+      properties:
+        context:
+          $ref: '#/components/schemas/Context'
+        message:
+          $ref: '#/components/schemas/OnUpdateMessage'
     OnUpdateMessage:
       required:
         - cabs_update_event
       type: object
       properties:
         cabs_update_event:
-          $ref: "#/components/schemas/OnUpdateEvent"
+          $ref: '#/components/schemas/OnUpdateEvent'
     OnUpdateEvent:
       oneOf:
-        - $ref: "#/components/schemas/RideAssignedEvent"
-        - $ref: "#/components/schemas/RideStartedEvent"
-        - $ref: "#/components/schemas/RideCompletedEvent"
-        - $ref: "#/components/schemas/RideBookingCancelledEvent"
+        - $ref: '#/components/schemas/RideAssignedEvent'
+        - $ref: '#/components/schemas/RideStartedEvent'
+        - $ref: '#/components/schemas/RideCompletedEvent'
+        - $ref: '#/components/schemas/RideBookingCancelledEvent'
       type: object
     RideAssignedEvent:
       required:
@@ -371,9 +424,9 @@ components:
             phone:
               type: string
             rating:
-              $ref: "#/components/schemas/DecimalValue"
+              $ref: '#/components/schemas/DecimalValue'
             registered_at:
-              $ref: "#/components/schemas/UTCTime"
+              $ref: '#/components/schemas/UTCTime'
             name:
               type: string
         vehicle:
@@ -393,7 +446,7 @@ components:
             registration:
               type: string
         update_type:
-          $ref: "#/components/schemas/OnUpdateEventType"
+          $ref: '#/components/schemas/OnUpdateEventType'
     OnUpdateEventType:
       type: string
       enum:
@@ -413,7 +466,7 @@ components:
         ride_id:
           type: string
         update_type:
-          $ref: "#/components/schemas/OnUpdateEventType"
+          $ref: '#/components/schemas/OnUpdateEventType'
     RideCompletedEvent:
       required:
         - order_id
@@ -427,15 +480,15 @@ components:
         order_id:
           type: string
         total_fare:
-          $ref: "#/components/schemas/Price"
+          $ref: '#/components/schemas/Price'
         fare:
-          $ref: "#/components/schemas/Price"
+          $ref: '#/components/schemas/Price'
         ride_id:
           type: string
         chargeable_distance:
-          $ref: "#/components/schemas/DecimalValue"
+          $ref: '#/components/schemas/DecimalValue'
         update_type:
-          $ref: "#/components/schemas/OnUpdateEventType"
+          $ref: '#/components/schemas/OnUpdateEventType'
     RideBookingCancelledEvent:
       required:
         - order_id
@@ -446,9 +499,9 @@ components:
         order_id:
           type: string
         update_type:
-          $ref: "#/components/schemas/OnUpdateEventType"
+          $ref: '#/components/schemas/OnUpdateEventType'
         cancellation_reason_id:
-          $ref: "#/components/schemas/CancellationSource"
+          $ref: '#/components/schemas/CancellationSource'
     CancellationSource:
       type: string
       enum:
@@ -456,6 +509,52 @@ components:
         - ByDriver
         - ByOrganization
         - ByAllocator
+    BecknCallbackReq_OnConfirmMessage:
+      oneOf:
+        - required:
+            - context
+            - message
+          type: object
+          properties:
+            context:
+              $ref: '#/components/schemas/Context'
+            message:
+              $ref: '#/components/schemas/OnConfirmMessage'
+        - required:
+            - context
+            - error
+          type: object
+          properties:
+            context:
+              $ref: '#/components/schemas/Context'
+            error:
+              $ref: '#/components/schemas/Error'
+      type: object
+    OnConfirmMessage:
+      required:
+        - order
+      type: object
+      properties:
+        order:
+          required:
+            - id
+            - items
+            - estimated_total_fare
+          type: object
+          properties:
+            estimated_total_fare:
+              $ref: '#/components/schemas/Price'
+            items:
+              items:
+                required:
+                  - id
+                type: object
+                properties:
+                  id:
+                    type: string
+              type: array
+            id:
+              type: string
     BecknReq_SearchMessage:
       required:
         - context
@@ -463,9 +562,9 @@ components:
       type: object
       properties:
         context:
-          $ref: "#/components/schemas/Context"
+          $ref: '#/components/schemas/Context'
         message:
-          $ref: "#/components/schemas/SearchMessage"
+          $ref: '#/components/schemas/SearchMessage'
     SearchMessage:
       required:
         - intent
@@ -495,7 +594,7 @@ components:
                       type: object
                       properties:
                         timestamp:
-                          $ref: "#/components/schemas/UTCTime"
+                          $ref: '#/components/schemas/UTCTime'
                     location:
                       required:
                         - gps
@@ -522,9 +621,9 @@ components:
                             area_code:
                               type: string
                         gps:
-                          $ref: "#/components/schemas/Gps"
+                          $ref: '#/components/schemas/Gps'
                 distance:
-                  $ref: "#/components/schemas/DecimalValue"
+                  $ref: '#/components/schemas/DecimalValue'
                 end:
                   required:
                     - location
@@ -556,48 +655,23 @@ components:
                             area_code:
                               type: string
                         gps:
-                          $ref: "#/components/schemas/Gps"
+                          $ref: '#/components/schemas/Gps'
     Gps:
       example: 123.321, 123.321
       format: '[-]?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?, [-]?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?'
       type: string
       description: Gps value in a string representation with an optional leading "-" for negative numbers. Integer and fractional parts are separated with a dot.Lat and Long parts are separated with a comma. String format is used to prevent loss of precision.
-    ConfirmResMessage:
-      required:
-        - order
-      type: object
-      properties:
-        order:
-          required:
-            - id
-            - items
-            - estimated_total_fare
-          type: object
-          properties:
-            estimated_total_fare:
-              $ref: "#/components/schemas/Price"
-            items:
-              items:
-                required:
-                  - id
-                type: object
-                properties:
-                  id:
-                    type: string
-              type: array
-            id:
-              type: string
-    BecknReq_ConfirmReqMessage:
+    BecknReq_ConfirmMessage:
       required:
         - context
         - message
       type: object
       properties:
         context:
-          $ref: "#/components/schemas/Context"
+          $ref: '#/components/schemas/Context'
         message:
-          $ref: "#/components/schemas/ConfirmReqMessage"
-    ConfirmReqMessage:
+          $ref: '#/components/schemas/ConfirmMessage'
+    ConfirmMessage:
       required:
         - order
       type: object
@@ -605,6 +679,7 @@ components:
         order:
           required:
             - items
+            - fulfillment
           type: object
           properties:
             items:
@@ -616,6 +691,18 @@ components:
                   id:
                     type: string
               type: array
+            fulfillment:
+              required:
+                - customer
+              type: object
+              properties:
+                customer:
+                  required:
+                    - mobile_number
+                  type: object
+                  properties:
+                    mobile_number:
+                      type: string
     BecknReq_CancelReqMessage:
       required:
         - context
@@ -623,9 +710,9 @@ components:
       type: object
       properties:
         context:
-          $ref: "#/components/schemas/Context"
+          $ref: '#/components/schemas/Context'
         message:
-          $ref: "#/components/schemas/CancelReqMessage"
+          $ref: '#/components/schemas/CancelReqMessage'
     CancelReqMessage:
       required:
         - order_id
@@ -635,7 +722,7 @@ components:
         order_id:
           type: string
         cancellation_reason_id:
-          $ref: "#/components/schemas/CancellationSource"
+          $ref: '#/components/schemas/CancellationSource'
     BecknReq_RatingMessage:
       required:
         - context
@@ -643,9 +730,9 @@ components:
       type: object
       properties:
         context:
-          $ref: "#/components/schemas/Context"
+          $ref: '#/components/schemas/Context'
         message:
-          $ref: "#/components/schemas/RatingMessage"
+          $ref: '#/components/schemas/RatingMessage'
     RatingMessage:
       required:
         - id
