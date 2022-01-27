@@ -505,10 +505,10 @@ components:
     CancellationSource:
       type: string
       enum:
-        - ByUser
-        - ByDriver
-        - ByOrganization
-        - ByAllocator
+        - CANCELLED_BY_USER
+        - CANCELLED_BY_DRIVER
+        - CANCELLED_BY_ORGANIZATION
+        - CANCELLED_BY_ALLOCATOR
     BecknCallbackReq_OnConfirmMessage:
       oneOf:
         - required:
