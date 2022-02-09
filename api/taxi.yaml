@@ -209,8 +209,6 @@ components:
         - timestamp
       type: object
       properties:
-        ttl:
-          $ref: '#/components/schemas/UTCTime'
         country:
           type: string
         domain:
@@ -222,8 +220,6 @@ components:
         action:
           $ref: '#/components/schemas/Action'
         message_id:
-          type: string
-        key:
           type: string
         city:
           type: string
@@ -397,6 +393,7 @@ components:
         - $ref: '#/components/schemas/RideStartedEvent'
         - $ref: '#/components/schemas/RideCompletedEvent'
         - $ref: '#/components/schemas/RideBookingCancelledEvent'
+        - $ref: '#/components/schemas/RideBookingReallocationEvent'
       type: object
     RideAssignedEvent:
       required:
@@ -454,6 +451,7 @@ components:
         - RIDE_STARTED
         - RIDE_ASSIGNED
         - RIDE_BOOKING_CANCELLED
+        - RIDE_BOOKING_REALLOCATION
     RideStartedEvent:
       required:
         - order_id
@@ -509,6 +507,22 @@ components:
         - CANCELLED_BY_DRIVER
         - CANCELLED_BY_ORGANIZATION
         - CANCELLED_BY_ALLOCATOR
+    RideBookingReallocationEvent:
+      required:
+        - order_id
+        - ride_id
+        - cancellation_reason_id
+        - update_type
+      type: object
+      properties:
+        order_id:
+          type: string
+        ride_id:
+          type: string
+        update_type:
+          $ref: '#/components/schemas/OnUpdateEventType'
+        cancellation_reason_id:
+          $ref: '#/components/schemas/CancellationSource'
     BecknCallbackReq_OnConfirmMessage:
       oneOf:
         - required:
@@ -698,11 +712,24 @@ components:
               properties:
                 customer:
                   required:
-                    - mobile_number
+                    - contact
                   type: object
                   properties:
-                    mobile_number:
-                      type: string
+                    contact:
+                      required:
+                        - phone
+                      type: object
+                      properties:
+                        phone:
+                          required:
+                            - country_code
+                            - number
+                          type: object
+                          properties:
+                            country_code:
+                              type: string
+                            number:
+                              type: string
     BecknReq_CancelReqMessage:
       required:
         - context
